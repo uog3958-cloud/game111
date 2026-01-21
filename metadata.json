@@ -1,0 +1,7 @@
+{
+  "name": "The Abyss Runner 3D",
+  "description": "A challenging 3D path-finding game with 3 levels. Navigate carefully; Level 3 contains a terrifying secret path that leads to a jumpscare game over.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
