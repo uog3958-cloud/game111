@@ -228,19 +228,28 @@ const App: React.FC = () => {
     };
   }, [status, update]);
 
+  const canvasWidth = currentMap.grid[0].length * CELL_SIZE;
+  const canvasHeight = currentMap.grid.length * CELL_SIZE;
+
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
-      <div className="relative bg-zinc-950 border-[8px] border-zinc-800 rounded-lg overflow-hidden shadow-2xl">
+    <div 
+      className="fixed inset-0 w-full h-full flex items-center justify-center bg-black"
+      style={{ touchAction: 'none' }}
+    >
+      <div 
+        className="relative bg-zinc-950 border-[8px] border-zinc-800 rounded-lg shadow-2xl overflow-hidden"
+        style={{ width: canvasWidth, height: canvasHeight, minWidth: canvasWidth, minHeight: canvasHeight }}
+      >
         <canvas 
           ref={canvasRef} 
-          width={currentMap.grid[0].length * CELL_SIZE} 
-          height={currentMap.grid.length * CELL_SIZE}
-          className="max-w-full max-h-full"
+          width={canvasWidth} 
+          height={canvasHeight}
+          className="block"
         />
       </div>
       
       {status === GameStatus.PLAYING && (
-        <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
+        <div className="absolute top-6 left-6 z-20 flex flex-col gap-2">
           <div className="bg-black/60 border border-white/10 px-4 py-2 rounded-lg backdrop-blur-md">
             <span className="text-zinc-500 text-xs uppercase font-bold tracking-widest mr-2">Phase</span>
             <span className="text-white font-black text-xl">{level + 1} <span className="text-zinc-600 text-sm">/ 3</span></span>

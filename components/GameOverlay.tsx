@@ -15,7 +15,6 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
 
   useEffect(() => {
     if (status === GameStatus.GAMEOVER) {
-      // Use a highly reliable direct audio link for a cinematic scream
       if (!audioRef.current) {
         audioRef.current = new Audio('https://www.myinstants.com/media/sounds/female-scream-24.mp3');
       }
@@ -28,18 +27,12 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
             await audioRef.current.play();
           }
         } catch (e) {
-          console.error("Audio playback failed, attempting fallback:", e);
-          // Fallback sound
-          if (audioRef.current) {
-            audioRef.current.src = 'https://www.soundboard.com/handler/Downloadaudio.ashx?id=258097';
-            audioRef.current.play().catch(err => console.error("Critical audio failure:", err));
-          }
+          console.error("Audio playback failed");
         }
       };
 
       playScream();
 
-      // Longer display for the jumpscare image
       const timer = setTimeout(() => {
         onRestart();
       }, 4000);
@@ -58,7 +51,7 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
 
   if (status === GameStatus.GAMEOVER) {
     return (
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black overflow-hidden">
+      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black overflow-hidden">
         <div className="relative w-full h-full flex items-center justify-center animate-[jumpscare_0.1s_infinite]">
           <img 
             src={JUMPSCARE_IMAGE} 
@@ -68,20 +61,15 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
               (e.target as HTMLImageElement).src = "https://images.squarespace-cdn.com/content/v1/51b3dc8ee4b051b96ceb10de/1603741873111-H80B68T8A70198S8WIB0/horror.jpg?format=1500w";
             }}
           />
-          
-          {/* Blood/Red Overlay */}
           <div className="absolute inset-0 bg-red-900/40 mix-blend-color-dodge pointer-events-none"></div>
-          
-          {/* Vignette */}
           <div className="absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,1)] pointer-events-none"></div>
-
           <style>{`
             @keyframes jumpscare {
-              0% { transform: scale(1.3) translate(2px, 2px); filter: hue-rotate(0deg); }
-              25% { transform: scale(1.35) translate(-2px, -3px); filter: hue-rotate(10deg); }
-              50% { transform: scale(1.3) translate(-3px, 0px); filter: hue-rotate(-5deg); }
-              75% { transform: scale(1.35) translate(3px, 1px); filter: hue-rotate(5deg); }
-              100% { transform: scale(1.3) translate(1px, -2px); filter: hue-rotate(0deg); }
+              0% { transform: scale(1.3) translate(2px, 2px); }
+              25% { transform: scale(1.35) translate(-2px, -3px); }
+              50% { transform: scale(1.3) translate(-3px, 0px); }
+              75% { transform: scale(1.35) translate(3px, 1px); }
+              100% { transform: scale(1.3) translate(1px, -2px); }
             }
           `}</style>
         </div>
@@ -91,13 +79,13 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
 
   if (status === GameStatus.WIN) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-xl">
         <div className="bg-zinc-900 border border-zinc-700 p-12 rounded-2xl text-center shadow-2xl max-w-lg">
           <h1 className="text-5xl font-black text-white mb-4 italic tracking-tighter uppercase">Ascended</h1>
           <p className="text-zinc-400 text-lg mb-8 uppercase tracking-widest">The nightmare is over. For now.</p>
           <button 
             onClick={onRestart}
-            className="px-12 py-4 bg-white hover:bg-zinc-200 text-black font-black rounded-lg transition-all transform hover:scale-110"
+            className="px-12 py-4 bg-white hover:bg-zinc-200 text-black font-black rounded-lg transition-all"
           >
             EXIT SYSTEM
           </button>
@@ -107,8 +95,8 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="max-w-md w-full p-10 bg-zinc-950 rounded-2xl border border-zinc-800 text-center shadow-[0_0_100px_rgba(255,255,255,0.05)]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black">
+      <div className="max-w-md w-full p-10 bg-zinc-950 rounded-2xl border border-zinc-800 text-center shadow-2xl">
         <div className="mb-6 inline-block p-3 bg-white/5 rounded-full border border-white/10">
           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -130,7 +118,7 @@ const GameOverlay: React.FC<GameOverlayProps> = ({ status, level, onStart, onRes
 
         <button 
           onClick={onStart}
-          className="w-full py-5 bg-white hover:bg-zinc-200 text-black font-black text-xl rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+          className="w-full py-5 bg-white hover:bg-zinc-200 text-black font-black text-xl rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.2)]"
         >
           START PROTOCOL
         </button>
