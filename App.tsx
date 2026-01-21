@@ -98,10 +98,55 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (status === GameStatus.PLAYING) {
-      initLevel(level);
-    }
-  }, [level, status, initLevel]);
+    initLevel(level);
+  }, [level, initLevel]);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Map
+    currentMap.grid.forEach((row, z) => {
+      row.forEach((cell, x) => {
+        if (cell === 1) {
+          ctx.fillStyle = '#111';
+          ctx.fillRect(x * CELL_SIZE, z * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          ctx.strokeStyle = '#222';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x * CELL_SIZE, z * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        } else if (cell === 3) {
+          ctx.fillStyle = '#0f0';
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#0f0';
+          ctx.fillRect(x * CELL_SIZE + 8, z * CELL_SIZE + 8, CELL_SIZE - 16, CELL_SIZE - 16);
+          ctx.shadowBlur = 0;
+        }
+      });
+    });
+
+    // Draw Obstacles
+    ctx.fillStyle = '#f00';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#f00';
+    obstaclesRef.current.forEach(obs => {
+      ctx.beginPath();
+      ctx.arc(obs.x, obs.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Draw Player
+    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#fff';
+    ctx.beginPath();
+    ctx.arc(playerPos.current.x, playerPos.current.y, PLAYER_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }, [currentMap]);
 
   const update = useCallback(() => {
     if (status !== GameStatus.PLAYING) return;
@@ -130,14 +175,13 @@ const App: React.FC = () => {
       playerPos.current.x = nextX;
       playerPos.current.y = nextY;
     } else {
-      const map = MAPS[level];
       playHitSound();
-      if (map.deathZoneThreshold !== undefined && Math.floor(playerPos.current.x / CELL_SIZE) >= map.deathZoneThreshold) {
+      if (currentMap.deathZoneThreshold !== undefined && Math.floor(playerPos.current.x / CELL_SIZE) >= currentMap.deathZoneThreshold) {
         setStatus(GameStatus.GAMEOVER);
       } else {
         playerPos.current = {
-          x: map.start.x * CELL_SIZE + CELL_SIZE / 2,
-          y: map.start.z * CELL_SIZE + CELL_SIZE / 2
+          x: currentMap.start.x * CELL_SIZE + CELL_SIZE / 2,
+          y: currentMap.start.z * CELL_SIZE + CELL_SIZE / 2
         };
       }
     }
@@ -148,14 +192,13 @@ const App: React.FC = () => {
       obs.y = obs.centerY + Math.sin(obs.angle) * obs.radius;
       const dist = Math.sqrt((obs.x - playerPos.current.x)**2 + (obs.y - playerPos.current.y)**2);
       if (dist < PLAYER_RADIUS + 8) {
-        const map = MAPS[level];
         playHitSound();
-        if (map.deathZoneThreshold !== undefined && Math.floor(playerPos.current.x / CELL_SIZE) >= map.deathZoneThreshold) {
+        if (currentMap.deathZoneThreshold !== undefined && Math.floor(playerPos.current.x / CELL_SIZE) >= currentMap.deathZoneThreshold) {
           setStatus(GameStatus.GAMEOVER);
         } else {
           playerPos.current = {
-            x: map.start.x * CELL_SIZE + CELL_SIZE / 2,
-            y: map.start.z * CELL_SIZE + CELL_SIZE / 2
+            x: currentMap.start.x * CELL_SIZE + CELL_SIZE / 2,
+            y: currentMap.start.z * CELL_SIZE + CELL_SIZE / 2
           };
         }
       }
@@ -173,89 +216,44 @@ const App: React.FC = () => {
 
     draw();
     frameRef.current = requestAnimationFrame(update);
-  }, [status, level, currentMap]);
-
-  const draw = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    currentMap.grid.forEach((row, z) => {
-      row.forEach((cell, x) => {
-        if (cell === 1) {
-          ctx.fillStyle = '#1a1a1a';
-          ctx.fillRect(x * CELL_SIZE, z * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-          ctx.strokeStyle = '#333';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(x * CELL_SIZE, z * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        } else if (cell === 3) {
-          ctx.fillStyle = '#0f0';
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = '#0f0';
-          ctx.fillRect(x * CELL_SIZE + 8, z * CELL_SIZE + 8, CELL_SIZE - 16, CELL_SIZE - 16);
-          ctx.shadowBlur = 0;
-        }
-      });
-    });
-
-    ctx.fillStyle = '#f00';
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = '#f00';
-    obstaclesRef.current.forEach(obs => {
-      ctx.beginPath();
-      ctx.arc(obs.x, obs.y, 8, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    ctx.fillStyle = '#fff';
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#fff';
-    ctx.beginPath();
-    ctx.arc(playerPos.current.x, playerPos.current.y, PLAYER_RADIUS, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  };
+  }, [status, level, currentMap, draw]);
 
   useEffect(() => {
     if (status === GameStatus.PLAYING) {
       frameRef.current = requestAnimationFrame(update);
+    } else {
+      draw(); // Start 화면에서도 지도를 한 번 그립니다.
     }
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [status, update]);
+  }, [status, update, draw]);
 
   const canvasWidth = currentMap.grid[0].length * CELL_SIZE;
   const canvasHeight = currentMap.grid.length * CELL_SIZE;
 
   return (
-    <div 
-      className="fixed inset-0 w-full h-full flex items-center justify-center bg-black"
-      style={{ touchAction: 'none' }}
-    >
+    <div className="flex items-center justify-center w-full h-screen bg-black overflow-hidden select-none touch-none">
       <div 
-        className="relative bg-zinc-950 border-[8px] border-zinc-800 rounded-lg shadow-2xl overflow-hidden"
-        style={{ width: canvasWidth, height: canvasHeight, minWidth: canvasWidth, minHeight: canvasHeight }}
+        className="relative bg-zinc-950 border-[6px] border-zinc-800 rounded shadow-[0_0_100px_rgba(0,0,0,1)]"
+        style={{ width: canvasWidth, height: canvasHeight }}
       >
         <canvas 
           ref={canvasRef} 
           width={canvasWidth} 
           height={canvasHeight}
-          className="block"
+          className="block w-full h-full"
         />
-      </div>
-      
-      {status === GameStatus.PLAYING && (
-        <div className="absolute top-6 left-6 z-20 flex flex-col gap-2">
-          <div className="bg-black/60 border border-white/10 px-4 py-2 rounded-lg backdrop-blur-md">
-            <span className="text-zinc-500 text-xs uppercase font-bold tracking-widest mr-2">Phase</span>
-            <span className="text-white font-black text-xl">{level + 1} <span className="text-zinc-600 text-sm">/ 3</span></span>
+        
+        {status === GameStatus.PLAYING && (
+          <div className="absolute top-4 left-4 pointer-events-none">
+            <div className="bg-black/80 border border-white/20 px-3 py-1 rounded-md backdrop-blur-sm">
+              <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-tighter mr-2">Phase</span>
+              <span className="text-white font-black text-lg">{level + 1}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <GameOverlay 
         status={status} 
