@@ -28,11 +28,9 @@ const App: React.FC = () => {
   const obstaclesRef = useRef<Obstacle[]>([]);
   const frameRef = useRef<number>(undefined);
   
-  // 간단한 충돌 효과음 설정
   const hitSound = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // 시스템 비프음 스타일의 짧은 효과음 로드
     hitSound.current = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
     hitSound.current.volume = 0.5;
   }, []);
@@ -40,7 +38,7 @@ const App: React.FC = () => {
   const playHitSound = () => {
     if (hitSound.current) {
       hitSound.current.currentTime = 0;
-      hitSound.current.play().catch(() => {}); // 유저 인터랙션 전 재생 방지 대응
+      hitSound.current.play().catch(() => {});
     }
   };
 
@@ -56,7 +54,7 @@ const App: React.FC = () => {
     };
 
     const obstacles: Obstacle[] = [];
-    if (lv === 1) { // Stage 2
+    if (lv === 1) {
       const spots = [{x: 5, z: 3}, {x: 8, z: 5}, {x: 2, z: 5}];
       spots.forEach((spot, i) => {
         obstacles.push({
@@ -69,13 +67,9 @@ const App: React.FC = () => {
           y: 0
         });
       });
-    } else if (lv === 2) { // Stage 3
+    } else if (lv === 2) {
       const spots = [
-        { x: 4, z: 3 },
-        { x: 8, z: 5 },
-        { x: 12, z: 3 },
-        { x: 16, z: 5 },
-        { x: 10, z: 7 }
+        { x: 4, z: 3 }, { x: 8, z: 5 }, { x: 12, z: 3 }, { x: 16, z: 5 }, { x: 10, z: 7 }
       ];
       spots.forEach((spot, i) => {
         obstacles.push({
@@ -137,15 +131,10 @@ const App: React.FC = () => {
       playerPos.current.y = nextY;
     } else {
       const map = MAPS[level];
-      const gridX = Math.floor(playerPos.current.x / CELL_SIZE);
-      
-      // 충돌 효과음 재생
       playHitSound();
-
-      if (map.deathZoneThreshold !== undefined && gridX >= map.deathZoneThreshold) {
+      if (map.deathZoneThreshold !== undefined && Math.floor(playerPos.current.x / CELL_SIZE) >= map.deathZoneThreshold) {
         setStatus(GameStatus.GAMEOVER);
       } else {
-        // Simple wall bump - Reset position
         playerPos.current = {
           x: map.start.x * CELL_SIZE + CELL_SIZE / 2,
           y: map.start.z * CELL_SIZE + CELL_SIZE / 2
@@ -157,16 +146,11 @@ const App: React.FC = () => {
       obs.angle += obs.angularSpeed;
       obs.x = obs.centerX + Math.cos(obs.angle) * obs.radius;
       obs.y = obs.centerY + Math.sin(obs.angle) * obs.radius;
-
       const dist = Math.sqrt((obs.x - playerPos.current.x)**2 + (obs.y - playerPos.current.y)**2);
       if (dist < PLAYER_RADIUS + 8) {
         const map = MAPS[level];
-        const gridX = Math.floor(playerPos.current.x / CELL_SIZE);
-        
-        // 충돌 효과음 재생
         playHitSound();
-
-        if (map.deathZoneThreshold !== undefined && gridX >= map.deathZoneThreshold) {
+        if (map.deathZoneThreshold !== undefined && Math.floor(playerPos.current.x / CELL_SIZE) >= map.deathZoneThreshold) {
           setStatus(GameStatus.GAMEOVER);
         } else {
           playerPos.current = {
@@ -181,9 +165,7 @@ const App: React.FC = () => {
     const finishGridY = Math.floor(playerPos.current.y / CELL_SIZE);
     if (currentMap.grid[finishGridY]?.[finishGridX] === 3) {
       if (level < MAPS.length - 1) {
-        const nextLv = level + 1;
-        setLevel(nextLv);
-        // Position is updated in the useEffect watching level change
+        setLevel(l => l + 1);
       } else {
         setStatus(GameStatus.WIN);
       }
@@ -201,40 +183,36 @@ const App: React.FC = () => {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Map
     currentMap.grid.forEach((row, z) => {
       row.forEach((cell, x) => {
         if (cell === 1) {
-          ctx.fillStyle = '#0a0a0a';
+          ctx.fillStyle = '#1a1a1a';
           ctx.fillRect(x * CELL_SIZE, z * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-          ctx.strokeStyle = '#222';
+          ctx.strokeStyle = '#333';
           ctx.lineWidth = 1;
           ctx.strokeRect(x * CELL_SIZE, z * CELL_SIZE, CELL_SIZE, CELL_SIZE);
         } else if (cell === 3) {
           ctx.fillStyle = '#0f0';
-          ctx.shadowBlur = 20;
+          ctx.shadowBlur = 15;
           ctx.shadowColor = '#0f0';
-          ctx.fillRect(x * CELL_SIZE + 10, z * CELL_SIZE + 10, CELL_SIZE - 20, CELL_SIZE - 20);
+          ctx.fillRect(x * CELL_SIZE + 8, z * CELL_SIZE + 8, CELL_SIZE - 16, CELL_SIZE - 16);
           ctx.shadowBlur = 0;
         }
       });
     });
 
-    // Draw Obstacles
-    ctx.fillStyle = '#ff0000';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#ff0000';
+    ctx.fillStyle = '#f00';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#f00';
     obstaclesRef.current.forEach(obs => {
       ctx.beginPath();
       ctx.arc(obs.x, obs.y, 8, 0, Math.PI * 2);
       ctx.fill();
     });
-    ctx.shadowBlur = 0;
 
-    // Draw Player
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = '#ffffff';
+    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#fff';
     ctx.beginPath();
     ctx.arc(playerPos.current.x, playerPos.current.y, PLAYER_RADIUS, 0, Math.PI * 2);
     ctx.fill();
@@ -251,27 +229,22 @@ const App: React.FC = () => {
   }, [status, update]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center">
-      <div className="relative bg-zinc-950 border-[12px] border-zinc-900 rounded-lg overflow-hidden shadow-[0_0_150px_rgba(0,0,0,1)]">
+    <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
+      <div className="relative bg-zinc-950 border-[8px] border-zinc-800 rounded-lg overflow-hidden shadow-2xl">
         <canvas 
           ref={canvasRef} 
           width={currentMap.grid[0].length * CELL_SIZE} 
           height={currentMap.grid.length * CELL_SIZE}
-          className="block"
+          className="max-w-full max-h-full"
         />
       </div>
       
       {status === GameStatus.PLAYING && (
-        <div className="absolute top-8 left-8 z-10 flex flex-col gap-3">
-          <div className="bg-black/80 border border-white/20 px-6 py-3 rounded-xl backdrop-blur-xl">
-            <span className="text-zinc-500 text-xs uppercase font-black tracking-widest mr-3">Phases Detected</span>
-            <span className="text-white font-black text-2xl">{level + 1} <span className="text-zinc-600">/ 3</span></span>
+        <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
+          <div className="bg-black/60 border border-white/10 px-4 py-2 rounded-lg backdrop-blur-md">
+            <span className="text-zinc-500 text-xs uppercase font-bold tracking-widest mr-2">Phase</span>
+            <span className="text-white font-black text-xl">{level + 1} <span className="text-zinc-600 text-sm">/ 3</span></span>
           </div>
-          {level >= 1 && (
-            <div className="bg-red-950/30 border border-red-600/50 px-5 py-2 rounded-xl text-red-500 text-[10px] font-black uppercase tracking-[0.2em] text-center animate-pulse">
-              Orbital Hazards Active
-            </div>
-          )}
         </div>
       )}
 
